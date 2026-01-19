@@ -3,48 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PSIA DEBUG</title>
+    <title>PSIA</title>
     <style>
-        :root { --bg: #0a0c10; --card: #14181f; --accent: #12ad8d; --blue: #1e3a5f; --text: #e0e6ed; --border: #1e293b; }
-        html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); overflow: hidden; font-family: sans-serif; }
-        body { display: flex; flex-direction: column; }
-        .header { padding: 15px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        :root { 
+            --bg: #0a0c10; --card: #14181f; --accent: #12ad8d; 
+            --blue: #1e3a5f; --text: #e0e6ed; --border: #1e293b;
+        }
+        html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; }
+        .header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .header h1 { font-size: 1.2rem; color: var(--accent); margin: 0; letter-spacing: 3px; font-weight: 800; }
+        .settings-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; opacity: 0.3; }
         #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 85%; padding: 12px; border-radius: 15px; font-size: 0.95rem; }
-        .msg.user { align-self: flex-end; background: var(--blue); }
-        .msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--border); }
-        .input-area { padding: 15px; background: var(--card); display: flex; gap: 10px; }
-        input { flex: 1; background: #1a202c; border: 1px solid var(--border); border-radius: 20px; padding: 10px; color: white; }
-        #setup-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; padding: 30px; }
+        .msg { max-width: 85%; padding: 14px 18px; border-radius: 18px; font-size: 1rem; line-height: 1.5; }
+        .msg.user { align-self: flex-end; background: var(--blue); color: white; border-bottom-right-radius: 2px; }
+        .msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        .input-area { padding: 15px; background: var(--card); border-top: 1px solid var(--border); display: flex; gap: 10px; padding-bottom: env(safe-area-inset-bottom, 15px); }
+        input[type="text"] { flex: 1; background: #1a202c; border: 1px solid var(--border); border-radius: 25px; padding: 12px 20px; color: white; font-size: 1rem; outline: none; }
+        .send-btn { background: var(--accent); border: none; width: 45px; height: 45px; border-radius: 50%; color: #000; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #setup-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; padding: 30px; z-index: 1000; }
+        .modal-card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
 
     <div id="setup-modal">
-        <div style="background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--accent);">
-            <h2 style="color:var(--accent)">Clé Gemini</h2>
-            <input type="password" id="api-key-input" placeholder="Colle ta clé ici...">
-            <button onclick="saveKey()" style="width:100%; margin-top:10px; padding:10px; background:var(--accent); border:none; border-radius:10px;">ACTIVER</button>
+        <div class="modal-card">
+            <h2 style="color:var(--accent); margin-top:0;">Configuration PSIA</h2>
+            <input type="password" id="api-key-input" placeholder="Clé API Gemini..." style="width:100%; margin-bottom:15px; background:#1a202c; border:1px solid #333; padding:12px; border-radius:10px; color:white;">
+            <button class="send-btn" style="width:100%; border-radius:10px; height:50px;" onclick="saveKey()">ACTIVER</button>
         </div>
     </div>
 
-    <div class="header"><h1>PSIA</h1><button onclick="localStorage.clear();location.reload();">⚙️</button></div>
+    <div class="header"><h1>PSIA</h1><button class="settings-btn" onclick="toggleSettings()">⚙️</button></div>
     <div id="chat-container"></div>
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="Message...">
-        <button onclick="sendMessage()" style="background:var(--accent); border:none; border-radius:50%; width:40px;">➔</button>
+        <input type="text" id="user-input" placeholder="Parle-moi..." autocomplete="off">
+        <button class="send-btn" onclick="sendMessage()">➔</button>
     </div>
 
     <script>
         let apiKey = localStorage.getItem('gemini_key');
-        let chatHistory = [];
+        let history = [];
 
-        if (!apiKey) document.getElementById('setup-modal').style.display = 'flex';
+        window.onload = () => {
+            if (!apiKey) document.getElementById('setup-modal').style.display = 'flex';
+            document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+        };
 
         function saveKey() {
             const key = document.getElementById('api-key-input').value.trim();
             if(key) { localStorage.setItem('gemini_key', key); location.reload(); }
         }
+
+        function toggleSettings() { if(confirm("Réinitialiser ?")) { localStorage.clear(); location.reload(); } }
 
         async function sendMessage() {
             const input = document.getElementById('user-input');
@@ -54,28 +66,40 @@
             appendMessage('user', text);
             input.value = '';
             const loadingId = "loading-" + Date.now();
-            appendMessage('bot', "En attente de réponse...", loadingId);
+            appendMessage('bot', "...", loadingId);
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // URL STABLE v1
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+            const requestBody = {
+                contents: [
+                    { role: "user", parts: [{ text: "Tu es PSIA, un analyste relationnel profond. Ne salue pas, analyse directement les propos de l'utilisateur avec psychologie." }]},
+                    { role: "model", parts: [{ text: "Compris. Je suis prêt pour l'analyse." }]},
+                    ...history,
+                    { role: "user", parts: [{ text: text }]}
+                ]
+            };
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: text }] }] })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
-
+                
                 if (data.error) {
-                    // C'est ici qu'on affiche l'erreur réelle de Google
-                    document.getElementById(loadingId).innerText = "ERREUR GOOGLE : " + data.error.message;
-                    document.getElementById(loadingId).style.color = "#f87171";
+                    document.getElementById(loadingId).innerText = "Erreur : " + data.error.message;
                 } else {
-                    document.getElementById(loadingId).innerText = data.candidates[0].content.parts[0].text;
+                    const botReply = data.candidates[0].content.parts[0].text;
+                    document.getElementById(loadingId).innerText = botReply;
+                    history.push({ role: "user", parts: [{ text: text }] });
+                    history.push({ role: "model", parts: [{ text: botReply }] });
+                    if(history.length > 20) history = history.slice(-20);
                 }
             } catch (err) {
-                document.getElementById(loadingId).innerText = "ERREUR RÉSEAU : " + err.message;
+                document.getElementById(loadingId).innerText = "Erreur réseau.";
             }
         }
 
