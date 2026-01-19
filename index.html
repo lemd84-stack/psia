@@ -3,37 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Analyseur Relationnel v1.0</title>
+    <title>PSIA</title>
     <style>
         :root { 
             --bg: #0a0c10; --card: #14181f; --accent: #12ad8d; 
             --blue: #1e3a5f; --text: #e0e6ed; --border: #1e293b;
         }
         
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; }
         
-        /* Header & Settings */
-        .header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { font-size: 1.1rem; color: var(--accent); margin: 0; letter-spacing: 1px; }
-        .settings-btn { background: none; border: none; color: var(--gray); font-size: 1.2rem; cursor: pointer; }
+        .header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .header h1 { font-size: 1.2rem; color: var(--accent); margin: 0; letter-spacing: 2px; font-weight: 800; }
+        .settings-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; opacity: 0.5; }
 
-        /* Chat Area */
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.4; position: relative; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: var(--bg); }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
         .msg.user { align-self: flex-end; background: var(--blue); color: white; border-bottom-right-radius: 2px; }
         .msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
-        
-        /* Profile / Memory Hint */
-        #memory-status { font-size: 0.7rem; color: var(--accent); text-align: center; padding: 5px; opacity: 0.7; font-style: italic; }
 
-        /* Input Area */
-        .input-area { padding: 15px; background: var(--card); border-top: 1px solid var(--border); display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; background: #1a202c; border: 1px solid var(--border); border-radius: 25px; padding: 12px 20px; color: white; font-size: 1rem; outline: none; }
+        .input-area { padding: 15px; background: var(--card); border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 15px); }
+        input[type="text"] { flex: 1; background: #1a202c; border: 1px solid var(--border); border-radius: 25px; padding: 12px 20px; color: white; font-size: 1rem; outline: none; -webkit-appearance: none; }
         input:focus { border-color: var(--accent); }
-        .send-btn { background: var(--accent); border: none; width: 45px; height: 45px; border-radius: 50%; color: #000; font-weight: bold; cursor: pointer; }
+        .send-btn { background: var(--accent); border: none; width: 45px; height: 45px; border-radius: 50%; color: #000; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        /* Key Setup Modal */
-        #setup-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; padding: 40px; z-index: 1000; }
+        #setup-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; padding: 30px; z-index: 1000; }
         .modal-card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); }
     </style>
 </head>
@@ -41,39 +35,39 @@
 
     <div id="setup-modal">
         <div class="modal-card">
-            <h2 style="color:var(--accent)">Configuration</h2>
-            <p style="font-size:0.8rem">Entre ta clé API OpenAI pour commencer la discussion. Elle est stockée uniquement sur ton téléphone.</p>
-            <input type="password" id="api-key-input" placeholder="sk-...">
-            <button class="send-btn" style="width:100%; border-radius:10px" onclick="saveKey()">ACTIVER</button>
+            <h2 style="color:var(--accent); margin-top:0;">Configuration</h2>
+            <p style="font-size:0.85rem; color: #94a3b8;">Entre ta clé API OpenAI pour activer PSIA.</p>
+            <input type="password" id="api-key-input" placeholder="sk-..." style="width:100%; margin-bottom:15px; background:#1a202c; border:1px solid #333; padding:12px; border-radius:10px; color:white;">
+            <button class="send-btn" style="width:100%; border-radius:10px; height:50px;" onclick="saveKey()">ACTIVER</button>
         </div>
     </div>
 
     <div class="header">
-        <h1>ANALYSEUR RELATIONNEL</h1>
+        <h1>PSIA</h1>
         <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
     </div>
 
-    <div id="memory-status">L'IA se souvient de tes échanges passés.</div>
-
     <div id="chat-container">
-        <div class="msg bot">Bonjour. Comment te sens-tu dans tes relations aujourd'hui ? Je suis là pour t'aider à analyser la situation.</div>
-    </div>
+        </div>
 
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="Parle-moi de ce qui te préoccupe..." onkeypress="handleKey(event)">
+        <input type="text" id="user-input" placeholder="Message..." autocomplete="off">
         <button class="send-btn" onclick="sendMessage()">➔</button>
     </div>
 
     <script>
         let apiKey = localStorage.getItem('openai_key');
-        // La "Mémoire Synthétique" : un résumé des faits importants
-        let memoryProfile = localStorage.getItem('relational_profile') || "Aucun historique pour le moment.";
+        let memoryProfile = localStorage.getItem('relational_profile') || "Nouveau patient.";
         let chatHistory = [];
 
-        if (!apiKey) document.getElementById('setup-modal').style.display = 'flex';
+        window.onload = () => {
+            if (!apiKey) document.getElementById('setup-modal').style.display = 'flex';
+            document.getElementById('user-input').focus();
+            document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+        };
 
         function saveKey() {
-            const key = document.getElementById('api-key-input').value;
+            const key = document.getElementById('api-key-input').value.trim();
             if(key.startsWith('sk-')) {
                 localStorage.setItem('openai_key', key);
                 apiKey = key;
@@ -82,29 +76,25 @@
         }
 
         function toggleSettings() {
-            if(confirm("Voulez-vous effacer la clé API et l'historique ?")) {
+            if(confirm("Réinitialiser PSIA (clé et mémoire) ?")) {
                 localStorage.clear();
                 location.reload();
             }
         }
-
-        function handleKey(e) { if(e.key === 'Enter') sendMessage(); }
 
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
             if(!text || !apiKey) return;
 
-            // Affichage message utilisateur
             appendMessage('user', text);
             input.value = '';
+            
+            const loadingId = "loading-" + Date.now();
+            appendMessage('bot', "...", loadingId);
 
-            // Préparation du contexte pour l'IA
             const messages = [
-                { role: "system", content: `Tu es un analyste relationnel expert. Ton ton est calme, empathique mais analytique. 
-                Ta mémoire actuelle des relations de l'utilisateur est : ${memoryProfile}.
-                Utilise ces informations pour poser des questions pertinentes et ne pas demander des détails déjà connus.
-                Aide l'utilisateur à identifier des patterns de comportement.` },
+                { role: "system", content: `Tu es PSIA, un analyste relationnel profond et calme. Ton but est d'analyser les comportements. Profil mémorisé : ${memoryProfile}. Ne fais pas de salutations inutiles, entre directement dans le vif du sujet en fonction de ce que dit l'utilisateur.` },
                 ...chatHistory,
                 { role: "user", content: text }
             ];
@@ -119,33 +109,23 @@
                 const data = await response.json();
                 const botReply = data.choices[0].message.content;
                 
-                appendMessage('bot', botReply);
+                document.getElementById(loadingId).innerText = botReply;
                 chatHistory.push({ role: "user", content: text }, { role: "assistant", content: botReply });
-                
-                // Garder seulement les 10 derniers messages pour la mémoire immédiate
                 if(chatHistory.length > 10) chatHistory.shift();
 
-                // Optionnel : Mise à jour de la mémoire synthétique (on pourrait lancer un deuxième appel API pour résumer)
-                updateProfile(text, botReply);
-
             } catch (err) {
-                appendMessage('bot', "Erreur de connexion. Vérifie ta clé API.");
+                document.getElementById(loadingId).innerText = "Erreur. Vérifie ta connexion ou ta clé.";
             }
         }
 
-        function appendMessage(role, text) {
+        function appendMessage(role, text, id = null) {
             const container = document.getElementById('chat-container');
             const div = document.createElement('div');
             div.className = `msg ${role}`;
             div.innerText = text;
+            if(id) div.id = id;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
-        }
-
-        // Simule une mise à jour du profil (plus tard on peut automatiser ça avec l'IA)
-        function updateProfile(userText, botReply) {
-            // Pour l'instant on garde une trace simple, on pourra optimiser
-            // en demandant à l'IA de générer un résumé tous les 5 messages.
         }
     </script>
 </body>
