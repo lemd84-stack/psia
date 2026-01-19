@@ -68,15 +68,13 @@
             const loadingId = "loading-" + Date.now();
             appendMessage('bot', "...", loadingId);
 
-            // URL STABLE v1
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // Utilisation du modèle 2.0 Flash Experimental via v1beta
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
 
             const requestBody = {
                 contents: [
-                    { role: "user", parts: [{ text: "Tu es PSIA, un analyste relationnel profond. Ne salue pas, analyse directement les propos de l'utilisateur avec psychologie." }]},
-                    { role: "model", parts: [{ text: "Compris. Je suis prêt pour l'analyse." }]},
                     ...history,
-                    { role: "user", parts: [{ text: text }]}
+                    { role: "user", parts: [{ text: `INSTRUCTION SYSTEME: Tu es PSIA, analyste relationnel profond. Ne salue jamais. Analyse directement avec psychologie : ${text}` }]}
                 ]
             };
 
@@ -90,16 +88,17 @@
                 const data = await response.json();
                 
                 if (data.error) {
-                    document.getElementById(loadingId).innerText = "Erreur : " + data.error.message;
+                    document.getElementById(loadingId).innerText = "Erreur Google : " + data.error.message;
                 } else {
                     const botReply = data.candidates[0].content.parts[0].text;
                     document.getElementById(loadingId).innerText = botReply;
+                    
                     history.push({ role: "user", parts: [{ text: text }] });
                     history.push({ role: "model", parts: [{ text: botReply }] });
                     if(history.length > 20) history = history.slice(-20);
                 }
             } catch (err) {
-                document.getElementById(loadingId).innerText = "Erreur réseau.";
+                document.getElementById(loadingId).innerText = "Erreur de connexion.";
             }
         }
 
